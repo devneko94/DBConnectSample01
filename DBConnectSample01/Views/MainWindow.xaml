@@ -1,0 +1,75 @@
+﻿<Window x:Class="DBConnectSample01.Views.MainWindow"
+        xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+        xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+        xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006" 
+        xmlns:d="http://schemas.microsoft.com/expression/blend/2008" 
+        xmlns:local="clr-namespace:DBConnectSample01.Views"
+        xmlns:vm="clr-namespace:DBConnectSample01.ViewModels"
+        mc:Ignorable="d" 
+        Title="MainWindow" Height="400" Width="550" >
+    <Window.DataContext>
+        <vm:MainViewModel/>
+    </Window.DataContext>
+    <Window.Resources>
+        <Style x:Key="ListViewHeaderStyle" TargetType="GridViewColumnHeader">
+            <!--<Setter Property="Background" Value="#F595"/>
+            <Setter Property="Margin" Value="1,0"/>
+            <Setter Property="FontSize" Value="18"/>
+            <Setter Property="FontWeight" Value="Bold"/>-->
+        </Style>
+        <Style x:Key="ListViewItemsStyle" TargetType="ListViewItem">
+            <!--<Setter Property="Background" Value="#F9C9"/>
+            <Setter Property="FontSize" Value="16"/>-->
+        </Style>
+    </Window.Resources>
+    <Grid>
+        <Grid.RowDefinitions>
+            <RowDefinition Height="50"/>
+            <RowDefinition Height="*"/>
+        </Grid.RowDefinitions>
+
+        <Grid Grid.Row="0">
+            <Grid.ColumnDefinitions>
+                <ColumnDefinition Width="*"/>
+                <ColumnDefinition Width="*"/>
+                <ColumnDefinition Width="*"/>
+            </Grid.ColumnDefinitions>
+
+            <Button x:Name="btnCreate" Grid.Column="0" Content="新規作成" Width="100" Height="30"
+                    Command="{Binding CreateCommand}"/>
+            <Button x:Name="btnUpdate" Grid.Column="1" Content="更新" Width="100" Height="30"
+                    Command="{Binding UpdateCommand}" CommandParameter="{Binding SelectedItem, ElementName=spread}"/>
+            <Button x:Name="btnDelete" Grid.Column="2" Content="削除" Width="100" Height="30"
+                    Command="{Binding DeleteCommand}" CommandParameter="{Binding SelectedItem, ElementName=spread}"/>
+        </Grid>
+
+        <Grid Grid.Row="1">
+            <ListView x:Name="spread" ItemsSource="{Binding MemberList}" ItemContainerStyle="{StaticResource ListViewItemsStyle}">
+                <ListView.View>
+                    <GridView>
+                        <GridViewColumn Width="50" DisplayMemberBinding="{Binding MemberID}"
+                                        HeaderContainerStyle="{StaticResource ListViewHeaderStyle}">
+                            <GridViewColumn.Header>
+                                <TextBlock Text="ID"/>
+                            </GridViewColumn.Header>
+                        </GridViewColumn>
+
+                        <GridViewColumn Width="150" DisplayMemberBinding="{Binding MemberName}"
+                                        HeaderContainerStyle="{StaticResource ListViewHeaderStyle}">
+                            <GridViewColumn.Header>
+                                <TextBlock Text="Name"/>
+                            </GridViewColumn.Header>
+                        </GridViewColumn>
+
+                        <GridViewColumn Width="294" DisplayMemberBinding="{Binding MemberAddress}"
+                                        HeaderContainerStyle="{StaticResource ListViewHeaderStyle}">
+                            <GridViewColumn.Header>
+                                <TextBlock Text="Address"/>
+                            </GridViewColumn.Header>
+                        </GridViewColumn>
+                    </GridView>
+                </ListView.View>
+            </ListView>
+        </Grid>
+    </Grid>
+</Window>
