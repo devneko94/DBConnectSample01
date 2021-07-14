@@ -15,10 +15,5 @@ namespace DBConnectSample01.Models
         public string MemberName { get; set; }
 
         public string MemberAddress { get; set; }
-
-        public MemberModel Clone()
-        {
-            return (MemberModel)MemberwiseClone();
-        }
     }
 }

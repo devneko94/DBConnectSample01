@@ -7,7 +7,8 @@
         xmlns:view="clr-namespace:DBConnectSample01.Views"
         xmlns:vm="clr-namespace:DBConnectSample01.ViewModels"
         mc:Ignorable="d"
-        Title="SubWindow" Height="300" Width="300" ResizeMode="NoResize">
+        Title="SubWindow" Height="300" Width="300" ResizeMode="NoResize"
+        WindowStartupLocation="CenterOwner">
     <Window.Resources>
         <Style x:Key="TitleStyle" TargetType="TextBlock">
             <Setter Property="HorizontalAlignment" Value="Stretch"/>
@@ -63,7 +64,7 @@
 
         <TextBlock Grid.Row="1" Grid.Column="0" Text="ID：" Style="{StaticResource TitleStyle}"/>
 
-        <TextBox Grid.Row="1" Grid.Column="1" Style="{StaticResource ValueBoxStyle}" Text="{Binding Model.MemberID}" d:Text="001"/>
+        <TextBox Grid.Row="1" Grid.Column="1" IsEnabled="{Binding CanEdit}" Style="{StaticResource ValueBoxStyle}" Text="{Binding Model.MemberID}" d:Text="001"/>
 
         <Rectangle Grid.Row="2" Grid.ColumnSpan="2" Style="{StaticResource LineStyle}"/>
 
