@@ -22,7 +22,7 @@ namespace DBConnectSample01.ViewModels
         /// <summary>
         /// 変更可否フラグ
         /// </summary>
-        public bool CanEdit { get; set; } = true;
+        public bool CanPKEdit { get; set; } = true;
 
         /// <summary>
         /// キャンセルコマンド

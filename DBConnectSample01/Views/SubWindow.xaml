@@ -64,7 +64,7 @@
 
         <TextBlock Grid.Row="1" Grid.Column="0" Text="ID：" Style="{StaticResource TitleStyle}"/>
 
-        <TextBox Grid.Row="1" Grid.Column="1" IsEnabled="{Binding CanEdit}" Style="{StaticResource ValueBoxStyle}" Text="{Binding Model.MemberID}" d:Text="001"/>
+        <TextBox Grid.Row="1" Grid.Column="1" IsEnabled="{Binding CanPKEdit}" Style="{StaticResource ValueBoxStyle}" Text="{Binding Model.MemberID}" d:Text="001"/>
 
         <Rectangle Grid.Row="2" Grid.ColumnSpan="2" Style="{StaticResource LineStyle}"/>
 

@@ -16,19 +16,34 @@ using System.Windows.Navigation;
 
 namespace DBConnectSample01.ViewModels
 {
-    public class MainViewModel : INotifyPropertyChanged
+    public class MainViewModel
     {
         #region 定数
         /// <summary>
         /// 接続文字列
         /// </summary>
-        private static readonly string CONNECT_STRING
+        private readonly string CONNECT_STRING
             = @"Provider = Microsoft.ACE.OLEDB.12.0; Data Source = C:\temp\SampleDB01.accdb";
 
         /// <summary>
         /// テーブル取得SQL文
         /// </summary>
-        private static readonly string SQL_SELECT = "SELECT * FROM MemberListTable";
+        private readonly string SQL_SELECT = "SELECT * FROM MemberListTable ORDER BY MemberID";
+
+        /// <summary>
+        /// INSERT文テンプレート
+        /// </summary>
+        private readonly string SQL_INSERT = "INSERT INTO MemberListTable( MemberID, MemberName, MemberAddress )VALUES( {0}, {1}, {2} )";
+
+        /// <summary>
+        /// UPDATE文テンプレート
+        /// </summary>
+        private readonly string SQL_UPDATE = "UPDATE MemberListTable SET {0} WHERE {1}";
+
+        /// <summary>
+        /// DELETE文テンプレート
+        /// </summary>
+        private readonly string SQL_DELETE = "DELETE FROM MemberListTable WHERE {0}";
         #endregion
 
         #region プロパティ
@@ -53,13 +68,6 @@ namespace DBConnectSample01.ViewModels
         public DelegateCommand<object> DeleteCommand { get; }
         #endregion
 
-        #region イベント
-        /// <summary>
-        /// 変更通知イベント
-        /// </summary>
-        public event PropertyChangedEventHandler PropertyChanged;
-        #endregion
-
         #region フィールド
         /// <summary>
         /// データテーブル
@@ -69,17 +77,17 @@ namespace DBConnectSample01.ViewModels
         /// <summary>
         /// DBコマンド
         /// </summary>
-        private OleDbCommand _dbCommand = new OleDbCommand();
+        private OleDbCommand _dbCommand = null;
 
         /// <summary>
         /// DBデータアダプター
         /// </summary>
-        private OleDbDataAdapter _dataAdapter = new OleDbDataAdapter();
+        private OleDbDataAdapter _dataAdapter = null;
 
         /// <summary>
         /// DBコネクション
         /// </summary>
-        private OleDbConnection _dbConnection = new OleDbConnection();
+        private OleDbConnection _dbConnection = null;
         #endregion
 
         #region コンストラクタ
@@ -106,6 +114,10 @@ namespace DBConnectSample01.ViewModels
             {
                 ShowTable();
             }
+            else
+            {
+                CloseDB();
+            }
         }
 
         /// <summary>
@@ -115,6 +127,7 @@ namespace DBConnectSample01.ViewModels
         {
             try
             {
+                _dbConnection = new OleDbConnection();
                 _dbConnection.ConnectionString = CONNECT_STRING;
                 _dbConnection.Open();
                 return true;
@@ -131,10 +144,13 @@ namespace DBConnectSample01.ViewModels
         /// </summary>
         private void ShowTable()
         {
+            _dataTable.Clear();
             MemberList.Clear();
 
             try
             {
+                _dbCommand = new OleDbCommand();
+                _dataAdapter = new OleDbDataAdapter();
                 _dbCommand.Connection = _dbConnection;
                 _dbCommand.CommandText = SQL_SELECT;
                 _dataAdapter.SelectCommand = _dbCommand;
@@ -149,7 +165,7 @@ namespace DBConnectSample01.ViewModels
                 CloseDB();
             }
 
-            foreach (DataRow dataRow in _dataTable.Rows )
+            foreach (DataRow dataRow in _dataTable.Rows)
             {
                 var model = new MemberModel
                 {
@@ -170,6 +186,10 @@ namespace DBConnectSample01.ViewModels
             _dbCommand?.Dispose();
             _dataAdapter?.Dispose();
             _dbConnection?.Close();
+
+            _dbCommand = null;
+            _dataAdapter = null;
+            _dataAdapter = null;
         }
 
         /// <summary>
@@ -184,8 +204,40 @@ namespace DBConnectSample01.ViewModels
             
             sub.ShowDialog();
 
-            SubViewModel context = (SubViewModel)sub.DataContext;
-            MemberList.Add(context.Model);
+            MemberModel addModel = ((SubViewModel)sub.DataContext).Model;
+
+            if (!OpenDB())
+            {
+                MessageBox.Show("DB接続に失敗しました。");
+                return;
+            }
+
+            OleDbTransaction tran = _dbConnection.BeginTransaction();
+
+            try
+            {
+                _dbCommand = new OleDbCommand();
+                _dataAdapter = new OleDbDataAdapter();
+
+                _dbCommand.Connection = _dbConnection;
+                _dbCommand.Transaction = tran;
+
+                _dbCommand.CommandText = string.Format(SQL_INSERT, $"'{addModel.MemberID}'", $"'{addModel.MemberName}'", $"'{addModel.MemberAddress}'");
+                _dbCommand.ExecuteNonQuery();
+
+                tran.Commit();
+
+                ShowTable();
+            }
+            catch(Exception e)
+            {
+                tran.Rollback();
+                MessageBox.Show(e.Message);
+            }
+            finally
+            {
+                CloseDB();
+            }
         }
 
         /// <summary>
@@ -206,17 +258,49 @@ namespace DBConnectSample01.ViewModels
                         MemberName = oldModel.MemberName,
                         MemberAddress = oldModel.MemberAddress
                     },
-                    CanEdit = false
+                    CanPKEdit = false
                 }
             };
 
             sub.ShowDialog();
 
-            // 更新時の処理
-            MemberModel newModel = ((SubViewModel)sub.DataContext).Model;
-            int targetIndex = MemberList.IndexOf(oldModel);
-            MemberList.RemoveAt(targetIndex);
-            MemberList.Insert(targetIndex, newModel);
+            MemberModel updateModel = ((SubViewModel)sub.DataContext).Model;
+
+            if (!OpenDB())
+            {
+                MessageBox.Show("DB接続に失敗しました。");
+                return;
+            }
+
+            OleDbTransaction tran = _dbConnection.BeginTransaction();
+
+            try
+            {
+                _dbCommand = new OleDbCommand();
+                _dataAdapter = new OleDbDataAdapter();
+
+                _dbCommand.Connection = _dbConnection;
+                _dbCommand.Transaction = tran;
+
+                string strSetValue = $"{nameof(updateModel.MemberName)} = '{updateModel.MemberName}', {nameof(updateModel.MemberAddress)} = '{updateModel.MemberAddress}'";
+                string strWhere = $"{nameof(updateModel.MemberID)} = '{updateModel.MemberID}'";
+
+                _dbCommand.CommandText = string.Format(SQL_UPDATE, strSetValue, strWhere);
+                _dbCommand.ExecuteNonQuery();
+
+                tran.Commit();
+
+                ShowTable();
+            }
+            catch (Exception e)
+            {
+                tran.Rollback();
+                MessageBox.Show(e.Message);
+            }
+            finally
+            {
+                CloseDB();
+            }
         }
 
         /// <summary>
@@ -225,21 +309,43 @@ namespace DBConnectSample01.ViewModels
         /// <param name="record">選択レコード</param>
         private void DeleteRecord(object record)
         {
-            MemberModel selectedModel = (MemberModel)record;
+            MemberModel deleteModel = (MemberModel)record;
 
-            MemberList.Remove(selectedModel);
-        }
+            if (!OpenDB())
+            {
+                MessageBox.Show("DB接続に失敗しました。");
+                return;
+            }
 
-        /// <summary>
-        /// プロパティ変更通知
-        /// </summary>
-        /// <param name="propertyName">プロパティ名</param>
-        private void OnPropertyChanged([CallerMemberName] string propertyName = null)
-        {
-            PropertyChanged?.Invoke(this, new PropertyChangedEventArgs(propertyName));
+            OleDbTransaction tran = _dbConnection.BeginTransaction();
+
+            try
+            {
+                _dbCommand = new OleDbCommand();
+                _dataAdapter = new OleDbDataAdapter();
+
+                _dbCommand.Connection = _dbConnection;
+                _dbCommand.Transaction = tran;
+
+                string strWhere = $"{nameof(deleteModel.MemberID)} = '{deleteModel.MemberID}'";
+
+                _dbCommand.CommandText = string.Format(SQL_DELETE, strWhere);
+                _dbCommand.ExecuteNonQuery();
+
+                tran.Commit();
+
+                ShowTable();
+            }
+            catch (Exception e)
+            {
+                tran.Rollback();
+                MessageBox.Show(e.Message);
+            }
+            finally
+            {
+                CloseDB();
+            }
         }
         #endregion
     }
 }
-
-// TODO: DB操作
